@@ -22,8 +22,8 @@ sync: ## sync nvim to local ~/.config directory
 	@rsync -r ./nvim/config/ ~/.config/nvim
 
 .PHONY: nvim-local
-nvim-local: ## Install nvim to local linux	
-	@DOCKER_BUILDKIT=1 docker build --target=artifact --output type=local,dest=/usr/local -f ./nvim/Dockerfile.debian  .
+nvim-local: ## Install nvim to local linux
+	@sudo DOCKER_BUILDKIT=1 docker build --output type=local,dest=/usr/local -f ./nvim/Dockerfile.debian  .
 
 .PHONY: run
 run: ## Run development container
