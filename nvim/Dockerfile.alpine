@@ -1,0 +1,51 @@
+FROM alpine:latest as builder
+
+# https://github.com/camilobermudez85/neovim-alpine/blob/ef8f3e8121ed1d24262df07f009a891e198c025c/neovim-alpine-base/Dockerfile#L22
+
+ARG NVIM_TAG=v0.3.4
+
+WORKDIR /tmp
+
+# Install build dependencies
+RUN apk add --no-cache \
+  git \
+  wget \
+  zip \
+  build-base \
+  coreutils \
+  patch \
+  cmake \
+  pkgconfig \
+  libtool \
+  automake \
+  autoconf \
+  m4 \
+  gettext-dev \
+  libintl \
+  libtermkey-dev \
+  libvterm-dev
+
+# Build neovim from source
+ENV CMAKE_EXTRA_FLAGS="-DENABLE_JEMALLOC=OFF" \
+  CMAKE_BUILD_TYPE="RelWithDebInfo"
+
+RUN git clone https://github.com/neovim/neovim.git \
+  && cd neovim \
+  && git checkout \
+  && make \
+  && make install
+
+
+FROM scratch as scratch
+
+COPY --from=builder /usr/local/bin/ /usr/local/bin
+COPY --from=builder /usr/local/share/nvim/ /usr/local/share/nvim/
+
+# RUN apk add --no-cache \
+#   libtermkey \
+#   libintl \
+#   libvterm \
+#   libgcc \
+#   bash
+
+

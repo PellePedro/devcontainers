@@ -1,0 +1,13 @@
+services:
+  godev:
+    image: "${GODEV_IMAGE_ALPINE}"
+    container_name: godev
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./nvim/config:/root/.config/nvim
+      - ~/.ssh:/root/.ssh
+      - ~/.gitconfig:/root/.gitconfig
+      - ~/.skyramp:/root/.skyramp
+      - ~/go/src/github.com/letsramp/skyramp/:/root/skyramp
+      - ~/go/src/github.com/GoogleCloudPlatform/microservices-demo/:/root/services
+      - ~/.skyramp/proj/helm/:/root/proj

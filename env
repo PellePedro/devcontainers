@@ -1,0 +1,4 @@
+export NVIM_IMAGE_ALPINE=pellepedro/nvim-scratch:alpine
+export NVIM_IMAGE_DEBIAN=pellepedro/nvim-scratch:debian
+export BASE_IMAGE_ALPINE=pellepedro/basedevcontainer:v0.18.0-alpine
+export GODEV_IMAGE_ALPINE=pellepedro/godevcontainer:v0.18.0-alpine

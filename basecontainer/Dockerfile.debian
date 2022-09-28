@@ -1,0 +1,98 @@
+ARG NVIM_IMAGE=pellepedro/nvim-scratch:debian
+ARG DEBIAN_VERSION=bullseye-slim
+
+ARG DOCKER_VERSION=v20.10.17
+ARG COMPOSE_VERSION=v2.10.1
+ARG BUILDX_VERSION=v0.9.1
+ARG LOGOLS_VERSION=v1.3.7
+ARG BIT_VERSION=v1.1.2
+ARG GH_VERSION=v2.14.7
+ARG DEVTAINR_VERSION=v0.6.0
+
+
+FROM qmcgaw/binpot:docker-${DOCKER_VERSION} AS docker
+FROM qmcgaw/binpot:compose-${COMPOSE_VERSION} AS compose
+FROM qmcgaw/binpot:buildx-${BUILDX_VERSION} AS buildx
+FROM qmcgaw/binpot:logo-ls-${LOGOLS_VERSION} AS logo-ls
+FROM qmcgaw/binpot:bit-${BIT_VERSION} AS bit
+FROM qmcgaw/binpot:gh-${GH_VERSION} AS gh
+FROM qmcgaw/devtainr:${DEVTAINR_VERSION} AS devtainr
+
+FROM debian:${DEBIAN_VERSION}
+ARG CREATED
+ARG COMMIT
+ARG VERSION=local
+
+# Setup Git and SSHf
+RUN apk add -q --update --progress --no-cache \ 
+  bash            \
+  bind-tools      \
+  build-base      \
+  ca-certificates \
+  curl            \
+  fzf             \
+  git             \
+  git-doc         \
+  libstdc++       \
+  mandoc          \
+  net-tools       \
+  nnn             \
+  npm             \
+  nodejs          \
+  openssh-client  \
+  procps          \
+  ripgrep         \
+  tzdata          \
+  upx             \
+  vim             \
+  zsh             \
+  python3         \
+  python3-dev
+
+# python
+ENV PYTHONUNBUFFERED=1
+RUN ln -sf python3 /usr/bin/python \
+    && python -m ensurepip \
+    && pip3 install --no-cache --upgrade pip setuptools codespell 
+
+WORKDIR /root
+
+ENV EDITOR=nvim \
+  LANG=en_US.UTF-8 \
+  # MacOS compatibility
+  TERM=xterm
+
+#  usermod --shell /bin/zsh root && \
+RUN git config --global advice.detachedHead false
+
+COPY zsh/.zshrc /root/
+COPY zsh/.config/zsh /root/.config/zsh
+COPY nnn/.config/nnn /root/.config/nnn
+
+RUN git config --global advice.detachedHead true
+
+# Docker CLI
+COPY --from=docker /bin /usr/local/bin/docker
+ENV DOCKER_BUILDKIT=1
+
+# Docker compose
+COPY --from=compose /bin /usr/libexec/docker/cli-plugins/docker-compose
+ENV COMPOSE_DOCKER_CLI_BUILD=1
+RUN echo "alias docker-compose='docker compose'" >> /root/.zshrc
+
+# Buildx plugin
+COPY --from=buildx /bin /usr/libexec/docker/cli-plugins/docker-buildx
+
+# Bit
+COPY --from=bit /bin /usr/local/bin/bit
+ARG TARGETPLATFORM
+RUN if [ "${TARGETPLATFORM}" != "linux/s390x" ]; then echo "y" | bit complete; fi
+
+COPY --from=gh /bin /usr/local/bin/gh
+
+COPY --from=devtainr /devtainr /usr/local/bin/devtainr
+
+COPY --from=nvim-scratch /usr/local/bin/ /usr/local/bin
+COPY --from=nvim-scratch /usr/local/share/nvim/ /usr/local/share/nvim/
+
+CMD ["zsh"]
